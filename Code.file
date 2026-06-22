@@ -1,0 +1,2681 @@
+*ABOUT.PHP*
+<?php
+session_start();
+$conn      = include 'db_career.php';
+$logged_in = isset($_SESSION['user_id']);
+$username  = $logged_in ? htmlspecialchars($_SESSION['username']) : '';
+ 
+$msg_sent = false;
+$msg_err  = "";
+ 
+// Contact form submit
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message'])) {
+    $name    = trim(mysqli_real_escape_string($conn, $_POST['name']));
+    $email   = trim(mysqli_real_escape_string($conn, $_POST['email']));
+    $subject = trim(mysqli_real_escape_string($conn, $_POST['subject'] ?? ''));
+    $message = trim(mysqli_real_escape_string($conn, $_POST['message']));
+ 
+    if (!$name || !$email || !$message) {
+        $msg_err = "Name, email and message are required!";
+    } elseif (!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
+        $msg_err = "Please enter a valid email address.";
+    } else {
+        mysqli_query($conn, "INSERT INTO contact_messages (name,email,subject,message)
+            VALUES('$name','$email','$subject','$message')");
+        $msg_sent = true;
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SoulSpace — About Us</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#080810;--surface:#10101a;--card:#14141f;--border:#222233;--lime:#c8f55a;--purple:#7c6af7;--pink:#f55a8f;--text:#f0f0f8;--muted:#7777a0;--faint:#333355}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:16px 50px;background:rgba(8,8,16,.9);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
+.logo{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;text-decoration:none;color:var(--text)}
+.logo span{color:var(--lime)}
+nav ul{display:flex;gap:24px;list-style:none}
+nav a{color:var(--muted);text-decoration:none;font-size:.87rem;transition:color .2s}
+nav a:hover,nav a.active{color:var(--lime)}
+.nav-r{display:flex;align-items:center;gap:12px}
+.nav-r span{color:var(--lime);font-size:.85rem}
+.btn-xs{padding:6px 16px;border-radius:50px;border:1.5px solid var(--border);color:var(--muted);text-decoration:none;font-size:.8rem;transition:all .2s}
+.btn-xs:hover{border-color:var(--lime);color:var(--lime)}
+.btn-solid{padding:8px 20px;background:var(--lime);color:#080810;border-radius:50px;text-decoration:none;font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;transition:all .2s}
+.btn-solid:hover{background:#d9ff70}
+/* HERO */
+.about-hero{padding:140px 60px 80px;text-align:center;position:relative;z-index:1}
+.about-hero h1{font-family:'Syne',sans-serif;font-size:clamp(2.5rem,6vw,4rem);font-weight:800;letter-spacing:-2px;line-height:1.1;margin-bottom:20px}
+.about-hero h1 em{font-style:normal;color:var(--lime)}
+.about-hero p{color:var(--muted);font-size:1.05rem;line-height:1.8;max-width:600px;margin:0 auto}
+/* MISSION */
+.mission{padding:80px 60px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.mission-inner{max-width:1060px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}
+.mission h2{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;letter-spacing:-1.5px;margin-bottom:16px}
+.mission h2 em{font-style:normal;color:var(--lime)}
+.mission p{color:var(--muted);font-size:.95rem;line-height:1.8;margin-bottom:14px}
+.mission-stats{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px}
+.m-stat{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center}
+.m-num{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--lime);letter-spacing:-1px}
+.m-label{color:var(--muted);font-size:.8rem;margin-top:4px}
+/* VALUES */
+.values{padding:80px 60px}
+.values-inner{max-width:1060px;margin:0 auto}
+.sec-head{text-align:center;margin-bottom:50px}
+.sec-label{display:inline-block;font-size:.75rem;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--lime);margin-bottom:12px}
+.sec-title{font-family:'Syne',sans-serif;font-size:clamp(1.8rem,4vw,2.5rem);font-weight:800;letter-spacing:-1.5px}
+.values-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}
+.val-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;transition:border-color .3s}
+.val-card:hover{border-color:var(--lime)}
+.val-icon{font-size:2rem;margin-bottom:14px}
+.val-card h3{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:8px}
+.val-card p{color:var(--muted);font-size:.85rem;line-height:1.65}
+/* CREATOR */
+.creator{padding:80px 60px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.creator-inner{max-width:700px;margin:0 auto;text-align:center}
+.creator-avatar{width:100px;height:100px;background:linear-gradient(135deg,var(--lime),var(--purple));border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:2.5rem;font-weight:800;color:#080810;margin:0 auto 24px}
+.creator h2{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;margin-bottom:6px}
+.creator .role{color:var(--lime);font-size:.9rem;font-weight:500;margin-bottom:16px}
+.creator p{color:var(--muted);font-size:.92rem;line-height:1.8}
+/* CONTACT */
+.contact{padding:80px 60px}
+.contact-inner{max-width:700px;margin:0 auto}
+.sec-head-left{margin-bottom:32px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:32px}
+.fg{margin-bottom:16px}
+label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:5px}
+.req{color:var(--pink)}
+input,textarea{width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.9rem;outline:none;transition:border-color .2s;resize:none}
+input:focus,textarea:focus{border-color:var(--lime)}
+textarea{min-height:120px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.btn-send{width:100%;padding:14px;background:var(--lime);color:#080810;border:none;border-radius:12px;font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;margin-top:6px;transition:all .2s}
+.btn-send:hover{background:#d9ff70}
+.alert-ok{background:rgba(200,245,90,.08);border:1px solid rgba(200,245,90,.25);color:var(--lime);border-radius:10px;padding:12px 16px;font-size:.88rem;margin-bottom:18px}
+.alert-err{background:rgba(245,90,143,.08);border:1px solid rgba(245,90,143,.25);color:var(--pink);border-radius:10px;padding:12px 16px;font-size:.88rem;margin-bottom:18px}
+/* FOOTER */
+footer{background:var(--bg);border-top:1px solid var(--border);padding:40px 60px 28px;position:relative;z-index:1}
+.footer-inner{max-width:1060px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.footer-logo{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;color:var(--text);text-decoration:none}
+.footer-logo span{color:var(--lime)}
+.footer-links{display:flex;gap:24px}
+.footer-links a{color:var(--muted);text-decoration:none;font-size:.85rem;transition:color .2s}
+.footer-links a:hover{color:var(--lime)}
+.footer-copy{color:var(--faint);font-size:.8rem;text-align:center;margin-top:24px;padding-top:20px;border-top:1px solid var(--border)}
+@media(max-width:800px){nav{padding:14px 18px}nav ul{display:none}.about-hero,.mission,.values,.creator,.contact{padding:60px 20px}.mission-inner{grid-template-columns:1fr}.row2{grid-template-columns:1fr}footer{padding:32px 20px 24px}}
+</style>
+</head>
+<body>
+<nav>
+    <a href="index.php" class="logo">Soul<span>Space</span></a>
+    <ul>
+        <li><a href="index.php">Home</a></li>
+        <li><a href="goto_career.php">Career</a></li>
+        <li><a href="relationship.php">Relationships</a></li>
+        <li><a href="about.php" class="active">About</a></li>
+    </ul>
+    <div class="nav-r">
+        <?php if($logged_in): ?>
+            <span>Hey, <?= $username ?> 👋</span>
+            <a href="logout.php" class="btn-xs">Logout</a>
+        <?php else: ?>
+            <a href="auth.php?mode=login" class="btn-xs">Login</a>
+            <a href="auth.php?mode=register" class="btn-solid">Join Free</a>
+        <?php endif; ?>
+    </div>
+</nav>
+ 
+<!-- HERO -->
+<section class="about-hero">
+    <h1>We built <em>SoulSpace</em><br>because we needed it too.</h1>
+    <p>A platform born from real confusion, real pressure, and the wish that someone had just given us honest, judgment-free guidance when we needed it most.</p>
+</section>
+ 
+<!-- MISSION -->
+<section class="mission">
+    <div class="mission-inner">
+        <div>
+            <h2>Our <em>Mission</em></h2>
+            <p>SoulSpace exists for every GenZ student who has ever felt lost, unheard, or pressured — by parents, by peers, by expectations, or by their own confusion.</p>
+            <p>We don't give generic advice. We listen to your specific situation and give you guidance that actually matches what you're going through — with 90–95% accuracy.</p>
+            <p>No judgment. No pressure. Just a safe space to figure it all out.</p>
+        </div>
+        <div class="mission-stats">
+            <div class="m-stat"><div class="m-num">10K+</div><div class="m-label">Students Helped</div></div>
+            <div class="m-stat"><div class="m-num">95%</div><div class="m-label">Accuracy Rate</div></div>
+            <div class="m-stat"><div class="m-num">2</div><div class="m-label">Guidance Tracks</div></div>
+            <div class="m-stat"><div class="m-num">100%</div><div class="m-label">Free Forever</div></div>
+        </div>
+    </div>
+</section>
+ 
+<!-- VALUES -->
+<section class="values">
+    <div class="values-inner">
+        <div class="sec-head">
+            <span class="sec-label">What we stand for</span>
+            <h2 class="sec-title">Our Core Values</h2>
+        </div>
+        <div class="values-grid">
+            <div class="val-card">
+                <div class="val-icon">🔒</div>
+                <h3>Safe Space</h3>
+                <p>Everything you share stays between you and SoulSpace. No judgment, no lectures — just understanding and guidance.</p>
+            </div>
+            <div class="val-card">
+                <div class="val-icon">🎯</div>
+                <h3>Personalized</h3>
+                <p>Your advice is generated from your own words. We don't give the same answer to everyone — your situation is unique.</p>
+            </div>
+            <div class="val-card">
+                <div class="val-icon">💚</div>
+                <h3>Empathy First</h3>
+                <p>We understand the pressure GenZ faces. Every piece of advice comes from a place of genuine care — not cold algorithms.</p>
+            </div>
+            <div class="val-card">
+                <div class="val-icon">🌱</div>
+                <h3>Growth Focused</h3>
+                <p>We don't just solve your immediate problem — we give you tools and mindset shifts that help you grow long-term.</p>
+            </div>
+            <div class="val-card">
+                <div class="val-icon">🆓</div>
+                <h3>Always Free</h3>
+                <p>Guidance should never be a privilege. SoulSpace is and will always be completely free for every student who needs it.</p>
+            </div>
+            <div class="val-card">
+                <div class="val-icon">🔄</div>
+                <h3>Revisit Anytime</h3>
+                <p>Save your guidance, track your journey, and come back whenever life throws a new challenge at you.</p>
+            </div>
+        </div>
+    </div>
+</section>
+ 
+<!-- CREATOR -->
+<section class="creator">
+    <div class="creator-inner">
+        <div class="creator-avatar">V</div>
+        <h2>Vinita Prasad</h2>
+        <div class="role">Founder & Creator of SoulSpace</div>
+        <p>I built SoulSpace because I was once that confused student who didn't know who to turn to. Neither career nor relationships came with a manual — and I wish something like this had existed for me. SoulSpace is my way of being that trusted guide for every student who feels exactly how I felt. You are not alone. 💚</p>
+    </div>
+</section>
+ 
+<!-- CONTACT -->
+<section class="contact" id="contact">
+    <div class="contact-inner">
+        <div class="sec-head-left">
+            <span class="sec-label">Get in touch</span>
+            <h2 class="sec-title" style="font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;letter-spacing:-1.5px;margin-top:8px">Have a question or feedback?</h2>
+            <p style="color:var(--muted);font-size:.9rem;margin-top:10px;line-height:1.7">We'd love to hear from you. Your feedback helps us make SoulSpace better for every student.</p>
+        </div>
+ 
+        <?php if ($msg_sent): ?>
+            <div class="alert-ok">✅ Message sent successfully! We'll get back to you soon. 💚</div>
+        <?php endif; ?>
+        <?php if ($msg_err): ?>
+            <div class="alert-err">⚠️ <?= htmlspecialchars($msg_err) ?></div>
+        <?php endif; ?>
+ 
+        <?php if (!$msg_sent): ?>
+        <div class="card">
+            <form method="POST" action="about.php#contact">
+                <div class="row2">
+                    <div class="fg">
+                        <label>Your Name <span class="req">*</span></label>
+                        <input type="text" name="name" placeholder="Your full name" value="<?= isset($_POST['name'])?htmlspecialchars($_POST['name']):'' ?>" required>
+                    </div>
+                    <div class="fg">
+                        <label>Email Address <span class="req">*</span></label>
+                        <input type="email" name="email" placeholder="your@email.com" value="<?= isset($_POST['email'])?htmlspecialchars($_POST['email']):'' ?>" required>
+                    </div>
+                </div>
+                <div class="fg">
+                    <label>Subject</label>
+                    <input type="text" name="subject" placeholder="e.g. Feedback, Question, Bug report..." value="<?= isset($_POST['subject'])?htmlspecialchars($_POST['subject']):'' ?>">
+                </div>
+                <div class="fg">
+                    <label>Your Message <span class="req">*</span></label>
+                    <textarea name="message" placeholder="Write your message here — we read every single one..."><?= isset($_POST['message'])?htmlspecialchars($_POST['message']):'' ?></textarea>
+                </div>
+                <button type="submit" class="btn-send">Send Message →</button>
+            </form>
+        </div>
+        <?php endif; ?>
+    </div>
+</section>
+ 
+<!-- FOOTER -->
+<footer>
+    <div class="footer-inner">
+        <a href="index.php" class="footer-logo">Soul<span>Space</span></a>
+        <div class="footer-links">
+            <a href="index.php">Home</a>
+            <a href="goto_career.php">Career</a>
+            <a href="relationship.php">Relationships</a>
+            <a href="about.php">About</a>
+            <a href="about.php#contact">Contact</a>
+        </div>
+    </div>
+    <div class="footer-copy">© 2025 SoulSpace by Vinita Prasad. Made with 💚 for GenZ students everywhere.</div>
+</footer>
+</body>
+</html>
+
+*AUTH.PHP*
+<?php
+// auth.php — SoulSpace Login & Register Page
+session_start();
+require_once 'db.php';
+ 
+$errors = [];
+$success = "";
+$mode = isset($_GET['mode']) ? $_GET['mode'] : 'login';
+ 
+// ─── REGISTER ───────────────────────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
+    $full_name = trim(mysqli_real_escape_string($conn, $_POST['full_name']));
+    $username  = trim(mysqli_real_escape_string($conn, $_POST['username']));
+    $email     = trim(mysqli_real_escape_string($conn, $_POST['email']));
+    $password  = $_POST['password'];
+    $age       = intval($_POST['age']);
+ 
+    if (empty($full_name) || empty($username) || empty($email) || empty($password))
+        $errors[] = "Fill all the feilds!";
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL))
+        $errors[] = "Email should be valid.";
+    if (strlen($password) < 6)
+        $errors[] = "Password should be atleast of 6 characters.";
+ 
+    if (empty($errors)) {
+        // Check duplicate
+        $check = mysqli_query($conn, "SELECT id FROM users WHERE email='$email' OR username='$username'");
+       if ($check && mysqli_num_rows($check) > 0) {
+            $errors[] = "Email or username is already registered!";
+        } else {
+            $hashed = password_hash($password, PASSWORD_DEFAULT);
+            $sql = "INSERT INTO users (full_name, username, email, password, age)
+                    VALUES ('$full_name','$username','$email','$hashed','$age')";
+            if (mysqli_query($conn, $sql)) {
+    $success = "Your account has been made. Please login 🎉";
+    $mode = 'login';
+} else {
+    die("SQL Error: " . mysqli_error($conn));
+}
+        }
+    }
+}
+ 
+// ─── LOGIN ───────────────────────────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
+    $email    = trim(mysqli_real_escape_string($conn, $_POST['email']));
+    $password = $_POST['password'];
+ 
+    if (empty($email) || empty($password)) {
+        $errors[] = "Enter email and password both!";
+    } else {
+        $res = mysqli_query($conn, "SELECT * FROM users WHERE email='$email'");
+        if ($res && mysqli_num_rows($res) === 1) {
+            $user = mysqli_fetch_assoc($res);
+            if (password_verify($password, $user['password'])) {
+                $_SESSION['user_id']   = $user['id'];
+                $_SESSION['username']  = $user['username'];
+                $_SESSION['full_name'] = $user['full_name'];
+                header("Location: index.php");
+                exit;
+            } else {
+                $errors[] = "Password is wrong!";
+            }
+        } else {
+            $errors[] = "Email is not registered.";
+        }
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SoulSpace — <?= $mode === 'login' ? 'Login' : 'Join Us' ?></title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --card: #1a1a24;
+    --border: #2a2a3a;
+    --accent1: #c8f55a;
+    --accent2: #7c6af7;
+    --accent3: #f55a8f;
+    --text: #f0f0f5;
+    --muted: #8888a0;
+    --font-head: 'Syne', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+ 
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+ 
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+ 
+  /* Animated background blobs */
+  .blob {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.18;
+    animation: blobMove 8s ease-in-out infinite alternate;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .blob-1 { width: 500px; height: 500px; background: var(--accent2); top: -100px; left: -100px; animation-delay: 0s; }
+  .blob-2 { width: 400px; height: 400px; background: var(--accent3); bottom: -80px; right: -80px; animation-delay: 2s; }
+  .blob-3 { width: 300px; height: 300px; background: var(--accent1); top: 40%; left: 40%; animation-delay: 4s; }
+ 
+  @keyframes blobMove {
+    0%   { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(30px, 20px) scale(1.1); }
+  }
+ 
+  .wrapper {
+    display: flex;
+    width: 100%;
+    max-width: 900px;
+    min-height: 560px;
+    z-index: 1;
+    padding: 20px;
+    gap: 0;
+  }
+ 
+  /* Left branding panel */
+  .brand-panel {
+    flex: 1;
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border-radius: 24px 0 0 24px;
+    padding: 48px 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border: 1px solid var(--border);
+    border-right: none;
+    position: relative;
+    overflow: hidden;
+  }
+  .brand-panel::before {
+    content: '';
+    position: absolute;
+    top: -60px; left: -60px;
+    width: 200px; height: 200px;
+    background: var(--accent2);
+    border-radius: 50%;
+    filter: blur(60px);
+    opacity: 0.3;
+  }
+ 
+  .logo {
+    font-family: var(--font-head);
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+  }
+  .logo span { color: var(--accent1); }
+ 
+  .brand-tagline {
+    font-size: 2.2rem;
+    font-family: var(--font-head);
+    font-weight: 700;
+    line-height: 1.2;
+    margin-top: auto;
+  }
+  .brand-tagline em {
+    font-style: normal;
+    color: var(--accent1);
+  }
+ 
+  .brand-sub {
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin-top: 12px;
+    line-height: 1.6;
+  }
+ 
+  .pills {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 24px;
+  }
+  .pill {
+    background: rgba(124,106,247,0.15);
+    border: 1px solid rgba(124,106,247,0.3);
+    color: #a99af5;
+    font-size: 0.78rem;
+    padding: 6px 14px;
+    border-radius: 50px;
+    font-family: var(--font-body);
+  }
+ 
+  /* Right form panel */
+  .form-panel {
+    flex: 1;
+    background: var(--card);
+    border-radius: 0 24px 24px 0;
+    padding: 48px 40px;
+    border: 1px solid var(--border);
+    border-left: none;
+    overflow-y: auto;
+  }
+ 
+  .tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 32px;
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 4px;
+  }
+  .tab {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    border-radius: 9px;
+    font-family: var(--font-head);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.25s;
+    color: var(--muted);
+    text-decoration: none;
+  }
+  .tab.active {
+    background: var(--accent1);
+    color: #0a0a0f;
+  }
+ 
+  h2 {
+    font-family: var(--font-head);
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .sub {
+    color: var(--muted);
+    font-size: 0.88rem;
+    margin-bottom: 24px;
+  }
+ 
+  .form-group {
+    margin-bottom: 16px;
+  }
+  label {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-bottom: 6px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  input, select {
+    width: 100%;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input:focus, select:focus {
+    border-color: var(--accent1);
+  }
+  select option { background: var(--surface); }
+ 
+  .row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+ 
+  .btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent1);
+    color: #0a0a0f;
+    border: none;
+    border-radius: 12px;
+    font-family: var(--font-head);
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: all 0.2s;
+    letter-spacing: 0.02em;
+  }
+  .btn:hover {
+    background: #d9ff70;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(200,245,90,0.25);
+  }
+ 
+  .alerts {
+    margin-bottom: 16px;
+  }
+  .alert-error {
+    background: rgba(245,90,143,0.1);
+    border: 1px solid rgba(245,90,143,0.3);
+    color: #f55a8f;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.88rem;
+    margin-bottom: 6px;
+  }
+  .alert-success {
+    background: rgba(200,245,90,0.1);
+    border: 1px solid rgba(200,245,90,0.3);
+    color: var(--accent1);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.88rem;
+    margin-bottom: 6px;
+  }
+ 
+  @media (max-width: 700px) {
+    .brand-panel { display: none; }
+    .form-panel { border-radius: 24px; border-left: 1px solid var(--border); }
+    .wrapper { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+ 
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+ 
+<div class="wrapper">
+  <!-- Left Brand Panel -->
+  <div class="brand-panel">
+    <div class="logo">Soul<span>Space</span></div>
+    <div>
+      <div class="brand-tagline">Your <em>safe space</em> to figure it all out.</div>
+      <p class="brand-sub">Career confusing? Relationships complicated? We get it. SoulSpace gives you real, personalized guidance — no judgment, just clarity.</p>
+      <div class="pills">
+        <span class="pill">💼 Career Guidance</span>
+        <span class="pill">💕 Relationship Help</span>
+        <span class="pill">🌱 Personal Growth</span>
+      </div>
+    </div>
+  </div>
+ 
+  <!-- Right Form Panel -->
+  <div class="form-panel">
+    <div class="tabs">
+      <a href="auth.php?mode=login"  class="tab <?= $mode==='login'?'active':'' ?>">Login</a>
+      <a href="auth.php?mode=register" class="tab <?= $mode==='register'?'active':'' ?>">Sign Up</a>
+    </div>
+ 
+    <!-- Alerts -->
+    <div class="alerts">
+      <?php foreach($errors as $e): ?>
+        <div class="alert-error">⚠️ <?= htmlspecialchars($e) ?></div>
+      <?php endforeach; ?>
+      <?php if($success): ?>
+        <div class="alert-success">✅ <?= htmlspecialchars($success) ?></div>
+      <?php endif; ?>
+    </div>
+ 
+    <?php if ($mode === 'login'): ?>
+    <!-- LOGIN FORM -->
+    <h2>Welcome back 👋</h2>
+    <p class="sub">Login karke apna saved guidance dekho.</p>
+    <form method="POST">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" name="email" placeholder="your@email.com" required>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" name="password" placeholder="••••••••" required>
+      </div>
+      <button type="submit" name="login" class="btn">Login →</button>
+    </form>
+ 
+    <?php else: ?>
+    <!-- REGISTER FORM -->
+    <h2>Join SoulSpace 🌱</h2>
+    <p class="sub">Free mein account banao aur guidance save karo.</p>
+    <form method="POST">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" name="full_name" placeholder="Tumhara naam" required>
+      </div>
+      <div class="row-2">
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" name="username" placeholder="coolname123" required>
+        </div>
+        <div class="form-group">
+          <label>Age</label>
+          <input type="number" name="age" placeholder="18" min="13" max="30">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" name="email" placeholder="your@email.com" required>
+      </div>
+      <div class="row-2">
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" name="password" placeholder="Min 6 chars" required>
+        </div>
+        
+      </div>
+      <button type="submit" name="register" class="btn">Create Account →</button>
+    </form>
+    <?php endif; ?>
+  </div>
+</div>
+ 
+</body>
+</html>
+
+*CAREER.PHP*
+<?php
+// ── SESSION + AUTH ────────────────────────────────────────
+session_start();
+if (!isset($_SESSION['user_id'])) {
+    header("Location: auth.php?mode=login");
+    exit;
+}
+ 
+// ── DATABASE — include se connect ─────────────────────────
+$conn = include 'db.php';
+ 
+$user_id   = (int)$_SESSION['user_id'];
+$full_name = htmlspecialchars($_SESSION['full_name']);
+$advice    = "";
+$submitted = false;
+$errors    = [];
+ 
+// ── HELPER ────────────────────────────────────────────────
+function has($text, $word) {
+    return strpos(strtolower($text), $word) !== false;
+}
+ 
+// ── ADVICE ENGINE ─────────────────────────────────────────
+function generateAdvice($class, $interests, $strengths, $weaknesses, $dream, $confusion) {
+    $i   = $interests . ' ' . $dream;
+    $out = "";
+ 
+    if (has($i,'coding') || has($i,'software') || has($i,'tech') || has($i,'web') || has($i,'app') || has($i,'computer'))
+        $out .= "💻 <strong>Tech Path:</strong> I see you're interested in technology! Try software development or web development. Get started with HTML, CSS, and JS at freeCodeCamp.org—it's free. Create a project and upload it to GitHub.<br><br>";
+ 
+    elseif (has($i,'design') || has($i,'art') || has($i,'drawing') || has($i,'graphic') || has($i,'creative') || has($i,'animation'))
+        $out .= "🎨 <strong>Creative Path:</strong> Creativity is your superpower! There's so much scope in UI/UX or graphic design. Download Figma today—the free tool the professionals use.
+<br><br>";
+ 
+    elseif (has($i,'doctor') || has($i,'medical') || has($i,'neet') || has($i,'biology') || has($i,'health') || has($i,'mbbs'))
+        $out .= "🏥 <strong>Medical Path:</strong> Becoming a doctor is a noble choice! Study NCERT Biology and Chemistry daily for NEET. Consistency is key—6-8 hours of consistent study daily can help you crack NEET.<br><br>";
+ 
+    elseif (has($i,'business') || has($i,'entrepreneur') || has($i,'marketing') || has($i,'startup') || has($i,'commerce'))
+        $out .= "📈 <strong>Business Path:</strong> There's a builder inside you! Start small or start small with freelancing. Read The Lean Startup—learn to take calculated risks.<br><br>";
+ 
+    elseif (has($i,'law') || has($i,'lawyer') || has($i,'legal') || has($i,'clat') || has($i,'judge'))
+        $out .= "⚖️ <strong>Law Path:</strong>Clear the CLAT exam for NALUs. Read the Newspaper daily, join debate clubs. Strong communication and logic will be your weapons.<br><br>";
+ 
+    elseif (has($i,'teach') || has($i,'teacher') || has($i,'education') || has($i,'professor'))
+        $out .= "📚 <strong>Teaching Path:</strong> After graduation, pursue a B.Ed. or start teaching on Unacademy/YouTube. There's a lot of scope in teaching!<br><br>";
+ 
+    elseif (has($i,'science') || has($i,'research') || has($i,'physics') || has($i,'isro') || has($i,'space'))
+        $out .= "🔬 <strong>Research Path:</strong> BSc → MSc → IISc or IIT. ISRO and DRDO are the best for research in India. Curiosity is your biggest tool!<br><br>";
+ 
+    elseif (has($i,'music') || has($i,'singing') || has($i,'dance') || has($i,'acting') || has($i,'film'))
+        $out .= "🎵 <strong>Arts Path:</strong> Explore FTII Pune or NSD Delhi. Start building your portfolio on YouTube/Instagram now – consistency builds an audience!
+<br><br>";
+ 
+    else
+        $out .= "🌟 <strong>Explorer Mode:</strong> Not clear—that's normal! In 30 days, focus on 3 things: a coding tutorial, a design project, a business idea. Whatever feels exciting is the path!<br><br>";
+ 
+    // Strength
+    $out .= "💪 <strong>Your Strength</strong> (<em>$strengths</em>): ";
+    if (has($strengths,'math') || has($strengths,'logical') || has($strengths,'analytical'))
+        $out .= "Math/logic Engineering, Finance, Data Science are valuable courses to follow!";
+    elseif (has($strengths,'communicat') || has($strengths,'talking') || has($strengths,'speaking'))
+        $out .= "Communication Sales, Law, Teaching have gold – you have a rare gift!";
+    elseif (has($strengths,'creative') || has($strengths,'imaginat') || has($strengths,'ideas'))
+        $out .= "Creative Thinking Is in Sky-High Demand in Design, Content, Marketing!";
+    elseif (has($strengths,'hardwork') || has($strengths,'dedicated') || has($strengths,'discipline'))
+        $out .= "Hard work is the key to cracking any field – 80% of people lack this quality.!";
+    else
+        $out .= "In every field, there is a role that only a guy like you can play.!";
+ 
+    // Weakness
+    $out .= "<br><br>🔧 <strong>Weakness</strong> (<em>$weaknesses</em>): ";
+    if (has($weaknesses,'procrastinat') || has($weaknesses,'lazy') || has($weaknesses,'delay'))
+        $out .= "The Pomodoro Technique — 25 minutes of work + 5 minutes of break. You'll see a difference in a week.!";
+    elseif (has($weaknesses,'nervous') || has($weaknesses,'anxious') || has($weaknesses,'fear'))
+        $out .= "4-7-8 breathing + Mochak practice reduces nervousness by 90%.";
+    elseif (has($weaknesses,'focus') || has($weaknesses,'distract') || has($weaknesses,'concentrat'))
+        $out .= "Keep your phone in the other room while you study. Try the Forest app!";
+    elseif (has($weaknesses,'confidence') || has($weaknesses,'shy') || has($weaknesses,'hesitat'))
+        $out .= "Confidence grows through action—do one uncomfortable thing every day. 30 days!";
+    else
+        $out .= "Pick a weakness and work on it for 90 days – compound growth will happen!";
+ 
+    // Confusion
+    if (!empty(trim($confusion))) {
+        $out .= "<br><br>🤔 <strong>Your Confusion</strong>: ";
+        if (has($confusion,'parent') || has($confusion,'mummy') || has($confusion,'papa') || has($confusion,'force'))
+            $out .= "Talk to parents with data—show salary reports and job scope. Logic works better than emotional arguments.💚";
+        elseif (has($confusion,'science') || has($confusion,'commerce') || has($confusion,'stream'))
+            $out .= "Science = max options. Commerce = business world. Arts = creativity/law. Interest se choose karo!";
+        elseif (has($confusion,'neet') || has($confusion,'jee') || has($confusion,'tough'))
+            $out .= "Those who consistently study 6-8 Harsha crack it. Consistency beats talent.!";
+        elseif (has($confusion,'passion') || has($confusion,'no idea') || has($confusion,'confused'))
+            $out .= "Whatever you do without drinking—that's your passion. Explore.!";
+        else
+            $out .= "\"<em>$confusion</em>\" — Thinking Seriously – Find and Message a Mentor on LinkedIn!";
+    }
+ 
+    // Class plan
+    $cl = (int)$class;
+    $out .= "<br><br>📅 <strong>Class $class Action Plan</strong>: ";
+    if ($cl <= 10)     $out .= "Freely explore karo — coding, art, debate sab try karo. Board pressure abhi mat lo!";
+    elseif ($cl <= 12) $out .= "Board + Entrance simultaneously. 5 target colleges shortlist karo aur deadlines track karo!";
+    else               $out .= "Take internships from the second year onwards. Build a LinkedIn profile. Your portfolio is your real self.!";
+ 
+    $out .= "<br><br>✨ <strong>SoulSpace Final Word:</strong> Not a perfect plan—just one <em>next step</em> -I want it. Get it today! 💚";
+    return $out;
+}
+ 
+// ── FORM SUBMIT ───────────────────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['interests'])) {
+    $class = mysqli_real_escape_string($conn, $_POST['current_class']);
+    $int   = trim(mysqli_real_escape_string($conn, $_POST['interests']));
+    $str   = trim(mysqli_real_escape_string($conn, $_POST['strengths']));
+    $weak  = trim(mysqli_real_escape_string($conn, $_POST['weaknesses'] ?? ''));
+    $dream = trim(mysqli_real_escape_string($conn, $_POST['dream_career']));
+    $conf  = trim(mysqli_real_escape_string($conn, $_POST['confusion'] ?? ''));
+ 
+    if (!$int || !$str || !$dream)
+        $errors[] = "Interests, strengths, and dream careers are important.!";
+ 
+    if (empty($errors)) {
+        $advice = generateAdvice($class, $int, $str, $weak, $dream, $conf);
+        $adv_db = mysqli_real_escape_string($conn, $advice);
+        $sql    = "INSERT INTO career_guidance
+                    (user_id,current_class,interests,strengths,weaknesses,dream_career,confusion,advice_given)
+                   VALUES('$user_id','$class','$int','$str','$weak','$dream','$conf','$adv_db')";
+        if (mysqli_query($conn, $sql)) $submitted = true;
+        else $errors[] = "DB Error: " . mysqli_error($conn);
+    }
+}
+ 
+// Past guidance
+$past = mysqli_query($conn,
+    "SELECT * FROM career_guidance WHERE user_id='$user_id' ORDER BY created_at DESC LIMIT 5");
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SoulSpace — Career Guidance</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#080810;--surface:#10101a;--card:#14141f;--border:#222233;--lime:#c8f55a;--purple:#7c6af7;--pink:#f55a8f;--text:#f0f0f8;--muted:#7777a0}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:16px 50px;background:rgba(8,8,16,.9);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
+.logo{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;text-decoration:none;color:var(--text)}
+.logo span{color:var(--lime)}
+nav ul{display:flex;gap:24px;list-style:none}
+nav a{color:var(--muted);text-decoration:none;font-size:.87rem;transition:color .2s}
+nav a:hover,nav a.active{color:var(--lime)}
+.nav-r{display:flex;align-items:center;gap:12px}
+.nav-r span{color:var(--lime);font-size:.85rem;font-weight:500}
+.btn-xs{padding:6px 16px;border-radius:50px;border:1.5px solid var(--border);color:var(--muted);text-decoration:none;font-size:.8rem;transition:all .2s}
+.btn-xs:hover{border-color:var(--lime);color:var(--lime)}
+.wrap{max-width:1060px;margin:0 auto;padding:110px 50px 70px;display:grid;grid-template-columns:1fr 320px;gap:24px;align-items:start}
+h1{font-family:'Syne',sans-serif;font-size:2.2rem;font-weight:800;letter-spacing:-1.5px;margin-bottom:8px}
+h1 em{font-style:normal;color:var(--lime)}
+.sub-head{color:var(--muted);font-size:.9rem;margin-bottom:24px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:28px}
+.sec-label{font-family:'Syne',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--lime);margin:20px 0 10px;padding-bottom:7px;border-bottom:1px solid var(--border)}
+.sec-label:first-child{margin-top:0}
+.fg{margin-bottom:14px}
+label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:5px}
+.req{color:var(--pink)}
+input,textarea,select{width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.9rem;outline:none;transition:border-color .2s;resize:none}
+input:focus,textarea:focus,select:focus{border-color:var(--lime)}
+textarea{min-height:80px}
+select option{background:var(--surface)}
+.hint{font-size:.72rem;color:var(--muted);margin-top:3px}
+.err{background:rgba(245,90,143,.08);border:1px solid rgba(245,90,143,.25);color:var(--pink);border-radius:10px;padding:10px 14px;font-size:.85rem;margin-bottom:14px}
+.btn-submit{width:100%;padding:14px;background:var(--lime);color:#080810;border:none;border-radius:12px;font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;margin-top:6px;transition:all .2s}
+.btn-submit:hover{background:#d9ff70}
+.btn-again{background:transparent;border:1.5px solid var(--border);color:var(--muted);padding:8px 20px;border-radius:50px;cursor:pointer;font-size:.83rem;margin-bottom:20px;transition:all .2s;font-family:'DM Sans',sans-serif}
+.btn-again:hover{border-color:var(--lime);color:var(--lime)}
+.result-card{background:linear-gradient(135deg,rgba(200,245,90,.05),rgba(124,106,247,.05));border:1px solid rgba(200,245,90,.2);border-radius:20px;padding:28px;margin-bottom:22px}
+.result-top{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.r-icon{width:40px;height:40px;background:rgba(200,245,90,.1);border:1px solid rgba(200,245,90,.2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+.result-top h3{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700}
+.result-top p{color:var(--muted);font-size:.77rem;margin-top:2px}
+.result-body{font-size:.89rem;line-height:1.85}
+.result-body strong{color:var(--lime)}
+.result-body em{color:#c0c0e0;font-style:italic}
+.saved-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(200,245,90,.07);border:1px solid rgba(200,245,90,.18);color:var(--lime);font-size:.74rem;padding:4px 12px;border-radius:50px;margin-top:14px}
+.sidebar{display:flex;flex-direction:column;gap:16px}
+.s-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px}
+.s-card h3{font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;margin-bottom:12px}
+.tips{list-style:none;display:flex;flex-direction:column;gap:8px}
+.tips li{display:flex;gap:8px;font-size:.8rem;color:var(--muted);line-height:1.5}
+.tips a{color:var(--lime);text-decoration:none}
+.past-item{padding:10px 0;border-bottom:1px solid var(--border)}
+.past-item:last-child{border:none;padding-bottom:0}
+.p-date{font-size:.71rem;color:var(--muted)}
+.p-dream{font-size:.84rem;font-weight:600;margin:3px 0}
+.p-snip{font-size:.77rem;color:var(--muted);line-height:1.4}
+@media(max-width:800px){nav{padding:14px 18px}nav ul{display:none}.wrap{grid-template-columns:1fr;padding:100px 18px 50px}}
+</style>
+</head>
+<body>
+ 
+<nav>
+    <a href="index.php" class="logo">Soul<span>Space</span></a>
+    <ul>
+        <li><a href="index.php">Home</a></li>
+        <li><a href="career.php" class="active">Career</a></li>
+        <li><a href="relationship.php">Relationships</a></li>
+        <li><a href="about.php">About</a></li>
+    </ul>
+    <div class="nav-r">
+        <span>Hey, <?= $full_name ?> 👋</span>
+        <a href="logout.php" class="btn-xs">Logout</a>
+    </div>
+</nav>
+ 
+<div class="wrap">
+    <div>
+        <h1>Career <em>Guidance</em> 💼</h1>
+        <p class="sub-head">Write down your situation literally - you'll receive advice that matches your entry and it'll be saved..</p>
+ 
+        <?php if ($submitted && $advice): ?>
+        <div class="result-card">
+            <div class="result-top">
+                <div class="r-icon">🎯</div>
+                <div>
+                    <h3>Your Personalized Guidance</h3>
+                    <p>Made to match your entry • Auto-saved ✅</p>
+                </div>
+            </div>
+            <div class="result-body"><?= $advice ?></div>
+            <div class="saved-badge">💾 SAVED IN THE ACCOUNT</div>
+        </div>
+        <!-- PHP POST se dobara form pe bhejta hai -->
+        <form method="POST" action="career.php">
+            <button type="submit" class="btn-again">↩ Dobara try karo</button>
+        </form>
+        <?php else: ?>
+        <div class="card">
+            <div class="sec-label">About you </div>
+            <?php foreach($errors as $e): ?>
+                <div class="err">⚠️ <?= htmlspecialchars($e) ?></div>
+            <?php endforeach; ?>
+            <form method="POST" action="career.php">
+                <input type="hidden" name="from_index" value="1">
+                <div class="fg">
+                    <label>Class / Year <span class="req">*</span></label>
+                    <select name="current_class" required>
+                        <option value="">-- Select karo --</option>
+                        <?php foreach(['8'=>'Class 8','9'=>'Class 9','10'=>'Class 10','11'=>'Class 11','12'=>'Class 12','13'=>'1st Year College','14'=>'2nd Year College','15'=>'3rd Year +'] as $v=>$l): ?>
+                        <option value="<?=$v?>" <?=(isset($_POST['current_class'])&&$_POST['current_class']==$v)?'selected':''?>><?=$l?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="sec-label">Interests and Dream</div>
+                <div class="fg">
+                    <label>What you like to do? <span class="req">*</span></label>
+                    <textarea name="interests" placeholder="e.g. Coding, designing, biology, music..."><?= isset($_POST['interests'])?htmlspecialchars($_POST['interests']):'' ?></textarea>
+                    <p class="hint">Good detailing-better guidance ✨</p>
+                </div>
+                <div class="fg">
+                    <label>Dream career? <span class="req">*</span></label>
+                    <input type="text" name="dream_career" placeholder="e.g. Software Engineer, Doctor, Don`t Know..." value="<?= isset($_POST['dream_career'])?htmlspecialchars($_POST['dream_career']):'' ?>">
+                </div>
+                <div class="sec-label">Strengths and Weaknesses</div>
+                <div class="fg">
+                    <label>Your good varieties? <span class="req">*</span></label>
+                    <textarea name="strengths" placeholder="e.g. Math, communication, hardwork..."><?= isset($_POST['strengths'])?htmlspecialchars($_POST['strengths']):'' ?></textarea>
+                </div>
+                <div class="fg">
+                    <label>How do you struggle?</label>
+                    <textarea name="weaknesses" placeholder="e.g. Procrastination, nervousness, focus..."><?= isset($_POST['weaknesses'])?htmlspecialchars($_POST['weaknesses']??''):'' ?></textarea>
+                </div>
+                <div class="sec-label">Your Confusions – Most Important!</div>
+                <div class="fg">
+                    <label>Exactly what is confusing?</label>
+                    <textarea name="confusion" placeholder="e.g. Should I take science or commerce? Parents are forcing me...."><?= isset($_POST['confusion'])?htmlspecialchars($_POST['confusion']??''):'' ?></textarea>
+                    <p class="hint">💬 This field gives the most accurate advice.</p>
+                </div>
+                <button type="submit" class="btn-submit">🎯 Give me guidance →</button>
+            </form>
+        </div>
+        <?php endif; ?>
+    </div>
+ 
+    <div class="sidebar">
+        <div class="s-card">
+            <h3>💡 Tips</h3>
+            <ul class="tips">
+                <li><span>✍️</span> Write the truth – there will be no judgement</li>
+                <li><span>📝</span>Write in detail = better advice</li>
+                <li><span>💾</span> Advice auto-save </li>
+                <li><span>🔄</span>Can fill many times</li>
+                <li><span>🏠</span> <a href="index.php">Go back to home</a></li>
+            </ul>
+        </div>
+        <div class="s-card">
+            <h3>📂  Past Guidance</h3>
+            <?php if (mysqli_num_rows($past) > 0): ?>
+                <?php while ($r = mysqli_fetch_assoc($past)): ?>
+                <div class="past-item">
+                    <div class="p-date"><?= date('d M Y, h:i A', strtotime($r['created_at'])) ?></div>
+                    <div class="p-dream">🎯 <?= htmlspecialchars($r['dream_career']) ?></div>
+                    <div class="p-snip"><?= htmlspecialchars(substr(strip_tags($r['advice_given']), 0, 90)) ?>...</div>
+                </div>
+                <?php endwhile; ?>
+            <?php else: ?>
+                <p style="color:var(--muted);font-size:.82rem;line-height:1.6">Abhi koi guidance nahi. Pehla form fill karo! 🌱</p>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+ 
+</body>
+</html>
+ 
+*DASHBOARD.PHP*
+<?php
+session_start();
+$conn = include 'db.php';
+
+/* OPTIONAL: sirf login user hi dekh sake */
+if(!isset($_SESSION['user_id'])){
+    header("Location: login.php");
+    exit;
+}
+
+/* DATA FETCH */
+$sql = "SELECT career_guidance.*, users.name 
+        FROM career_guidance 
+        JOIN users ON career_guidance.user_id = users.id
+        ORDER BY career_guidance.created_at DESC";
+
+$res = mysqli_query($conn, $sql);
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>Dashboard - Student Data</title>
+
+<style>
+body{
+    background:#080810;
+    color:white;
+    font-family:sans-serif;
+    padding:20px;
+}
+
+h2{color:#c8f55a;}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:20px;
+}
+
+th,td{
+    border:1px solid #222;
+    padding:10px;
+    font-size:14px;
+}
+
+th{
+    background:#14141f;
+    color:#c8f55a;
+}
+
+tr:nth-child(even){
+    background:#10101a;
+}
+
+.small{
+    font-size:12px;
+    color:#aaa;
+}
+
+.top{
+    display:flex;
+    justify-content:space-between;
+    margin-bottom:20px;
+}
+
+a{
+    color:#c8f55a;
+    text-decoration:none;
+}
+</style>
+
+</head>
+<body>
+
+<div class="top">
+    <h2>📊 Students Data Dashboard</h2>
+    <div>
+        <a href="index.php">Home</a> |
+        <a href="career.php">Career</a> |
+        <a href="logout.php">Logout</a>
+    </div>
+</div>
+
+<table>
+<tr>
+    <th>Name</th>
+    <th>Interests</th>
+    <th>Strengths</th>
+    <th>Dream Career</th>
+    <th>Advice</th>
+    <th>Date</th>
+</tr>
+
+<?php while($row = mysqli_fetch_assoc($res)): ?>
+
+<tr>
+    <td><?= htmlspecialchars($row['name']) ?></td>
+
+    <td><?= htmlspecialchars($row['interests']) ?></td>
+
+    <td><?= htmlspecialchars($row['strengths']) ?></td>
+
+    <td><?= htmlspecialchars($row['dream_career']) ?></td>
+
+    <td><?= substr(strip_tags($row['advice_given']),0,80) ?>...</td>
+
+    <td class="small">
+        <?= date("d M Y", strtotime($row['created_at'])) ?>
+    </td>
+</tr>
+
+<?php endwhile; ?>
+
+</table>
+
+</body>
+</html>
+*goto_career.php*
+<?php
+session_start();
+if (!isset($_SESSION['user_id'])) {
+    header("Location: auth.php?mode=login");
+} else {
+    header("Location: career.php");
+}
+exit;
+?>
+ 
+*index.php*
+<?php
+session_start();
+$logged_in = isset($_SESSION['user_id']);
+$username  = $logged_in ? htmlspecialchars($_SESSION['username']) : '';
+?>
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>SoulSpace — Your Safe Space to Grow</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width",intial-scale=1.0">
+        <meta name="Description" content="This is me time platform provided for the students who are 
+        suffering from peer pressure and the path of no guidance where they are not outspoken and they 
+        need a person to talk and this website provide the best suggestion for the student after 
+        understanding the whole scenario of the respectiove person. They are not 100 % accurate
+        but the website can guide with 90-95 % accuracy.">
+        
+        <meta name="Keywords" content="Student-help,a wise support,ready to be last option,growth,
+        relationship advice">
+        <meta name="Author" content="VINITA PRASAD">
+       <!--describing all colours available in css to add in websites and it is global-->
+       <style>:root {
+  --bg:       #080810;  
+  --surface:  #10101a;
+  --card:     #14141f;
+  --border:   #222233;
+  --lime:     #c8f55a;
+  --purple:   #7c6af7;
+  --pink:     #f55a8f;
+  --text:     #f0f0f8;
+  --muted:    #7777a0;
+  --faint:    #333355;
+  --head:     'Syne', sans-serif;
+  --body:     'DM Sans', sans-serif;
+  --radius:   16px;
+}
+/*This will decide the scroll behaviour of the website*/
+html { scroll-behavior: smooth; }  
+/*adding body colors and deciding shades*/
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--body);
+  overflow-x: hidden;
+  cursor: none;
+}
+
+/*Adding the information about the cursor that what should be the color and size width*/
+.cursor {
+  width: 10px; height: 10px;
+  background: var(--lime);
+  border-radius: 50%;
+  position: fixed;
+  top: 0; left: 0;
+  pointer-events: none;
+  z-index: 9999;
+  transition: transform 0.1s, width 0.2s, height 0.2s;
+  transform: translate(-50%,-50%);
+}
+.cursor.big { width: 36px; height: 36px; opacity: 0.3; }
+ <!--This is a invisible gradient on the website that means you can see the cursor moving but no click be done-->
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+}
+/*Background mein kuch coloured circles dega jo blur honge unhe move karta rahega*/
+.orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(100px);
+  pointer-events: none;
+  z-index: 0;
+  animation: drift 12s ease-in-out infinite alternate;
+}
+.orb-1 { width:500px;height:500px;background:var(--purple);opacity:.12;top:-150px;left:-150px;animation-delay:0s; }
+.orb-2 { width:400px;height:400px;background:var(--pink);opacity:.10;bottom:-100px;right:-100px;animation-delay:3s; }
+.orb-3 { width:300px;height:300px;background:var(--lime);opacity:.06;top:40%;left:35%;animation-delay:6s; }
+@keyframes drift {
+  0%   { transform: translate(0,0) scale(1); }
+  100% { transform: translate(40px,30px) scale(1.15); }
+}
+
+/* SETTING THE NAVBAR COLOR,SIDE AND CLICKABLE FILTERS*/
+        nav {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 60px;
+  background: rgba(8,8,16,0.7);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  animation: fadeDown 0.7s ease backwards;
+}
+@keyframes fadeDown {
+  from { opacity:0; transform:translateY(-20px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+/*ADDING NAVBAR LOGO IN WEBSITE*/
+.nav-logo {
+  font-family: var(--head);
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -1px;
+  text-decoration: none;
+  color: var(--text);
+}
+.nav-logo span { color: var(--lime); }
+ 
+.nav-links {
+  display: flex;
+  gap: 36px;
+  list-style: none;
+}
+.nav-links a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: color 0.2s;
+  position: relative;
+}
+
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  bottom: -4px; left: 0; right: 0;
+  height: 2px;
+  background: var(--lime);
+  transform: scaleX(0);
+  transition: transform 0.25s;
+}
+/* changes in the link on navbar if mouse hover on it*/
+.nav-links a:hover { color: var(--text); }
+.nav-links a:hover::after { transform: scaleX(1); }
+ 
+.nav-cta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+/* STYKING THE BUTTON IN THE HRTML CLASS*/
+.btn-ghost {
+  padding: 9px 22px;
+  border: 1.5px solid var(--border);
+  border-radius: 50px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+.btn-ghost:hover { border-color: var(--lime); color: var(--lime); }
+.btn-solid {
+  padding: 9px 22px;
+  background: var(--lime);
+  border-radius: 50px;
+  color: #080810;
+  text-decoration: none;
+  font-family: var(--head);
+  font-size: 0.88rem;
+  font-weight: 700;
+  transition: all 0.2s;
+}
+.btn-solid:hover { background: #d9ff70; transform: translateY(-1px); }
+ /* THREE LINES THAT WILL BE SHOWN ON MOBILE VIEW NOT ON DESKTOP FOR NAVBAR*/
+.hamburger { display:none; flex-direction:column; gap:5px; cursor:pointer; }
+.hamburger span { width:24px;height:2px;background:var(--text);border-radius:2px;transition:all 0.3s; }
+/*MAIN SECTION OF THE WEBSITE WHICH WILL SHOW VERY FIRST IN THE VIEW OF USER*/
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 120px 24px 80px;
+  position: relative;
+  z-index: 1;
+}
+.hero-inner { max-width: 820px; }
+ 
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(200,245,90,0.08);
+  border: 1px solid rgba(200,245,90,0.2);
+  color: var(--lime);
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 6px 16px;
+  border-radius: 50px;
+  margin-bottom: 28px;
+  opacity: 0;
+  animation: fadeUp 0.6s 0.3s ease forwards;
+  letter-spacing: 0.05em;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px;
+  background: var(--lime);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity:1; transform:scale(1); }
+  50%      { opacity:0.4; transform:scale(1.4); }
+}
+
+.hero h1 {
+  font-family: var(--head);
+  font-size: clamp(3rem, 7vw, 5.5rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -3px;
+  margin-bottom: 24px;
+  opacity: 0;
+  animation: fadeUp 0.7s 0.5s ease forwards;
+}
+.hero h1 em {
+  font-style: normal;
+  color: var(--lime);
+  position: relative;
+}
+.hero h1 em::after {
+  content: '';
+  position: absolute;
+  left: 0; bottom: 4px; right: 0;
+  height: 4px;
+  background: var(--lime);
+  opacity: 0.3;
+  border-radius: 2px;
+}
+ 
+.hero p {
+  color: var(--muted);
+  font-size: 1.15rem;
+  line-height: 1.7;
+  max-width: 560px;
+  margin: 0 auto 40px;
+  opacity: 0;
+  animation: fadeUp 0.7s 0.7s ease forwards;
+}
+ /* SETTING OF BUTTONS THAT WILL DISPLAY WHEN YOU SCROLL THE WEBSITE*/
+.hero-btns {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+  opacity: 0;
+  animation: fadeUp 0.7s 0.9s ease forwards;
+}
+.hero-btns .btn-primary {
+  padding: 16px 36px;
+  background: var(--lime);
+  color: #080810;
+  border-radius: 50px;
+  font-family: var(--head);
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.25s;
+}
+.hero-btns .btn-primary:hover {
+  background: #d9ff70;
+  transform: translateY(-3px);
+  box-shadow: 0 16px 40px rgba(200,245,90,0.25);
+}
+.hero-btns .btn-outline {
+  padding: 16px 36px;
+  border: 1.5px solid var(--border);
+  color: var(--text);
+  border-radius: 50px;
+  font-size: 1rem;
+  text-decoration: none;
+  transition: all 0.25s;
+}
+.hero-btns .btn-outline:hover { border-color: var(--lime); color: var(--lime); }
+ 
+/* SCROLL INDICATION WHILE SCROLLING DOWN*/
+.scroll-hint {
+  position: absolute;
+  bottom: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  opacity: 0;
+  animation: fadeUp 0.6s 1.4s ease forwards;
+}
+.scroll-hint .arrow {
+  width: 1px;
+  height: 40px;
+  background: linear-gradient(to bottom, var(--muted), transparent);
+  animation: scrollDrop 1.5s ease-in-out infinite;
+}
+@keyframes scrollDrop {
+  0%,100% { opacity:0; transform:scaleY(0); transform-origin:top; }
+  50%      { opacity:1; transform:scaleY(1); }
+}
+ 
+/* THIS IS STATS BAR SHOWING THE ENGAGEMENT OF THE PEOPLE */
+.stats-bar {
+  position: relative; z-index: 1;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  overflow: hidden;
+}
+.stat-item {
+  flex: 1;
+  max-width: 260px;
+  text-align: center;
+  padding: 36px 24px;
+  border-right: 1px solid var(--border);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s, transform 0.5s;
+}
+.stat-item:last-child { border-right: none; }
+.stat-item.visible { opacity:1; transform:translateY(0); }
+.stat-num {
+  font-family: var(--head);
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: var(--lime);
+  letter-spacing: -2px;
+}
+.stat-label {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
+ 
+/* THIS IS SECTION PART OF THE WEBSITE WHICH WILL DEFINE AND TELL ABOUT THE SITE AND ITS FEATURE*/
+section { position: relative; z-index: 1; }
+.section-label {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--lime);
+  margin-bottom: 14px;
+}
+.section-title {
+  font-family: var(--head);
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -1.5px;
+  line-height: 1.1;
+  margin-bottom: 16px;
+}
+.section-sub {
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.7;
+  max-width: 520px;
+}
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.65s ease, transform 0.65s ease;
+}
+.reveal.visible { opacity:1; transform:translateY(0); }
+ 
+/*THIS IS SERVICES HEAD PROVIDED BY US IN THE WEBSITE*/
+.services {
+  padding: 100px 60px;
+}
+.services-head {
+  text-align: center;
+  margin-bottom: 64px;
+}
+.services-head .section-sub { margin: 0 auto; }
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.service-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 36px 32px;
+  transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+  cursor: default;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.5s, transform 0.5s, border-color 0.3s, box-shadow 0.3s;
+}
+.service-card.visible { opacity:1; transform:translateY(0); }
+.service-card:hover {
+  border-color: var(--lime);
+  box-shadow: 0 0 40px rgba(200,245,90,0.07);
+  transform: translateY(-4px) !important;
+}
+.card-icon {
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem;
+  margin-bottom: 22px;
+}
+/*THIS ICON CIRCLE IN DIFFERENT COLORS*/
+.card-icon.green  { background: rgba(200,245,90,0.1); }
+.card-icon.purple { background: rgba(124,106,247,0.1); }
+.card-icon.pink   { background: rgba(245,90,143,0.1); }
+.card-icon.blue   { background: rgba(90,180,245,0.1); }
+.service-card h3 {
+  font-family: var(--head);
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.service-card p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+.card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--lime);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  margin-top: 20px;
+  transition: gap 0.2s;
+}
+.card-link:hover { gap: 10px; }
+ 
+/* HOW IT WILL WORK (THE SITE) */
+.how {
+  padding: 100px 60px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.how-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+.steps { display: flex; flex-direction: column; gap: 28px; margin-top: 40px; }
+.step {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: opacity 0.5s, transform 0.5s;
+}
+.step.visible { opacity:1; transform:translateX(0); }
+.step-num {
+  flex-shrink: 0;
+  width: 40px; height: 40px;
+  background: rgba(200,245,90,0.1);
+  border: 1px solid rgba(200,245,90,0.25);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--head);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--lime);
+}
+.step-text h4 {
+  font-family: var(--head);
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+.step-text p { color: var(--muted); font-size: 0.88rem; line-height: 1.6; }
+ 
+/* THIS IS VISUAL SIDE OF MY SITE */
+.how-visual {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 32px;
+  position: relative;
+  overflow: hidden;
+}
+.how-visual::before {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 150px; height: 150px;
+  background: var(--purple);
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.15;
+}
+.mock-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+/*THIS IS THE STYLING OF MOCK QUETIONS AND TAB*/
+.mock-dot { width:10px;height:10px;border-radius:50%; }
+.mock-dot:nth-child(1){background:#ff5f57;}
+.mock-dot:nth-child(2){background:#febc2e;}
+.mock-dot:nth-child(3){background:#28c840;}
+ 
+.mock-question {
+  background: rgba(124,106,247,0.1);
+  border: 1px solid rgba(124,106,247,0.2);
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-size: 0.88rem;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+.mock-input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.mock-tags { display:flex; gap:8px; flex-wrap:wrap; margin-bottom: 20px; }
+.mock-tag {
+  background: rgba(200,245,90,0.08);
+  border: 1px solid rgba(200,245,90,0.2);
+  color: var(--lime);
+  font-size: 0.75rem;
+  padding: 4px 12px;
+  border-radius: 50px;
+}
+.mock-result {
+  background: rgba(200,245,90,0.05);
+  border: 1px solid rgba(200,245,90,0.15);
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text);
+}
+.mock-result span { color: var(--lime); font-weight: 600; }
+ 
+/*THIS IS TESTIMONIALS OF MY SITE WHO USED IT */
+.testimonials {
+  padding: 100px 60px;
+}
+.testimonials-head { text-align:center; margin-bottom:60px; }
+.testimonials-head .section-sub { margin:0 auto; }
+.testi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.testi-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 30px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s, transform 0.5s;
+}
+.testi-card.visible { opacity:1; transform:translateY(0); }
+.testi-stars { color: var(--lime); font-size: 0.85rem; margin-bottom: 14px; }
+.testi-text {
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.7;
+  margin-bottom: 20px;
+  font-style: italic;
+}
+.testi-author { display:flex; align-items:center; gap:12px; }
+.testi-avatar {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  display: flex; align-items:center; justify-content:center;
+  font-family: var(--head);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #080810;
+}
+.av-lime { background: var(--lime); }
+.av-purple { background: var(--purple); color:#fff; }
+.av-pink { background: var(--pink); color:#fff; }
+.testi-name { font-weight: 600; font-size: 0.9rem; }
+.testi-role { color: var(--muted); font-size: 0.78rem; }
+ 
+/*SETTING OF CUSTOMERS BANNERS  */
+.cta-banner {
+  padding: 100px 60px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+}
+.cta-inner {
+  max-width: 700px;
+  margin: 0 auto;
+  text-align: center;
+}
+.cta-inner .section-title { font-size: clamp(2rem,5vw,3.5rem); }
+.cta-inner p { color:var(--muted); font-size:1rem; line-height:1.7; margin:16px auto 36px; max-width:480px; }
+.cta-big {
+  display: inline-block;
+  padding: 18px 48px;
+  background: var(--lime);
+  color: #080810;
+  border-radius: 50px;
+  font-family: var(--head);
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.25s;
+}
+.cta-big:hover {
+  background: #d9ff70;
+  transform: translateY(-3px);
+  box-shadow: 0 20px 50px rgba(200,245,90,0.3);
+}
+ 
+/* STYLINF THE FOOTER SECTION OF WHOLE WEBPAGE NOW(SOULSPACE)*/
+footer {
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  padding: 48px 60px 32px;
+  position: relative; z-index:1;
+}
+.footer-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+.footer-logo {
+  font-family: var(--head);
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--text);
+  text-decoration: none;
+}
+.footer-logo span { color: var(--muted); }
+.footer-links { display:flex; gap:28px; }
+.footer-links a { color:var(--muted); text-decoration:none; font-size:0.85rem; transition:color 0.2s; }
+.footer-links a:hover { color:var(--lime); }
+.footer-copy { color:var(--faint); font-size:0.8rem; text-align:center; margin-top:28px; padding-top:24px; border-top:1px solid var(--border); }
+ 
+/* SETTING THE ANIMATIONS FOR MY SITE */
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(24px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+ 
+/* I HAVE USED THIS TO MAKE THE SITE RESPOSIVE*/
+@media (max-width: 900px) {
+  nav { padding: 18px 24px; }
+  .nav-links { display:none; }
+  .hamburger { display:flex; }
+  .services, .how, .testimonials, .cta-banner { padding: 72px 24px; }
+  .how-inner { grid-template-columns:1fr; gap:40px; }
+  footer { padding: 40px 24px 28px; }
+  .footer-inner { flex-direction:column; align-items:flex-start; }
+}
+@media (max-width: 480px) {
+  .hero h1 { letter-spacing:-2px; }
+  .stats-bar { flex-wrap:wrap; }
+  .stat-item { border-right:none; border-bottom:1px solid var(--border); }
+}
+ 
+/* MOBILE VIEW ADDING IN MY SITE*/
+.mobile-menu {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(8,8,16,0.97);
+  z-index: 99;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+}
+.mobile-menu.open { display:flex; }
+.mobile-menu a {
+  font-family: var(--head);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.mobile-menu a:hover { color: var(--lime); }
+.mobile-close {
+  position: absolute;
+  top: 24px; right: 28px;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 1.8rem;
+  cursor: pointer;
+}
+/*MY STYLING IS ENDED*/
+        </style>
+
+    </head>
+    <body>
+        <!--ADDED MY MAIN LOGO OF WEBSITE-->
+        <img src="soulspace_logo (4).svg" alt="APP LOGO">
+        <!-- CUSTOMIZING MY  Cursor TO SCROOL ON MY SITE -->
+<div class="cursor" id="cursor"></div>
+ 
+<!-- THIS THE SETTING OF MY BACKGROUND ORBBS-->
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+ 
+<!-- THIS IS MY MOBILE VIEW MENU -->
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" onclick="closeMobile()">✕</button>
+  <a href="index.php">Home</a>
+  <a href="career.php">Career</a>
+  <a href="relationship.php">Relationships</a>
+  <a href="about.php">About</a>
+  <!--THIS PHP CODING TO CHECK THE CRITERIA OF USER IF LOGGED OUT OR NOT-->
+  <?php if($logged_in): ?>
+    <a href="logout.php">Logout</a>
+  <?php else: ?>
+    <a href="auth.php?mode=login">Login</a>
+  <?php endif; ?>
+</div>
+ 
+<!-- NAVBAR SETTING FOR USER -->
+<nav>
+  <a href="index.php" class="nav-logo">Soul<span>Space</span></a>
+  <ul class="nav-links">
+    <li><a href="index.php">Home</a></li>
+    <li><a href="career.php">Career</a></li>
+    <li><a href="relationship.php">Relationships</a></li>
+    <li><a href="about.php">About</a></li>
+  </ul>
+  <div class="nav-cta">
+    <?php if($logged_in): ?>
+      <span style="color:var(--lime);font-size:0.88rem;font-weight:500;">Hey, <?= $username ?> 👋</span>
+      <a href="logout.php" class="btn-ghost">Logout</a>
+    <?php else: ?>
+      <a href="auth.php?mode=login" class="btn-ghost">Login</a>
+      <a href="auth.php?mode=register" class="btn-solid">Join Free</a>
+    <?php endif; ?>
+  </div>
+  <div class="hamburger" onclick="openMobile()">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+ 
+<!-- THIS HERO SECTION OF THE FILE -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">
+      <span class="dot"></span>
+      90–95% Personalized Accuracy
+    </div>
+    <h1>
+      Your <em>safe space</em><br>
+      to figure it all out.
+    </h1>
+    <!--ADDED PARAGRAPH TO MAKE THE SITE MORE INTERACTIVE-->
+    <p>
+      Confused about career? Struggling in a relationship? Suffering from peer pressure and don`t 
+      know where to go? SoulSpace gives GenZ students
+      real, personalized guidance — built around your unique situation. No judgment. Just clarity. You can call it 
+      your AI brother.
+    </p>
+    <div class="hero-btns">
+      <a href="<?= $logged_in ? 'career.php' : 'auth.php?mode=register' ?>" class="btn-primary">
+        Get Guidance →
+      </a>
+      <a href="about.php" class="btn-outline">Learn More</a>
+    </div>
+  </div>
+  <div class="scroll-hint">
+    <span>SCROLL</span>
+    <div class="arrow"></div>
+  </div>
+</section>
+ 
+<!-- STATS BAR INFORMATION -->
+<div class="stats-bar">
+  <div class="stat-item reveal">
+    <div class="stat-num">10K+</div>
+    <div class="stat-label">Students Guided by SOULSPACE!</div>
+  </div>
+  <div class="stat-item reveal" style="transition-delay:0.1s">
+    <div class="stat-num">95%</div>
+    <div class="stat-label">Accuracy Rate</div>
+  </div>
+  <div class="stat-item reveal" style="transition-delay:0.2s">
+    <div class="stat-num">2</div>
+    <div class="stat-label">Guidance Tracks</div>
+  </div>
+  <div class="stat-item reveal" style="transition-delay:0.3s">
+    <div class="stat-num">Free</div>
+    <div class="stat-label">Always & Forever brother</div>
+  </div>
+</div>
+ 
+<!-- SERVICES PROVIDED BY US -->
+<section class="services">
+  <div class="services-head reveal">
+    <!--OFFERING-->
+    <span class="section-label">What we offering to our GenZ</span>
+    <h2 class="section-title">Guidance that actually <em style="font-style:normal;color:var(--lime)">gets you.</em></h2>
+    <p class="section-sub">Two focused tracks — career and relationships — built specifically for students navigating real-life pressures and feel free to share.</p>
+  </div>
+  <div class="services-grid">
+    <div class="service-card">
+      <div class="card-icon green">💼</div>
+      <!--CAREER GUIDING SECTION-->
+      <h3>Career Guidance</h3>
+      <p>Unsure which path to choose after school? Tell us your interests, strengths and confusion — we'll map out a personalized roadmap just for you.</p>
+      <a href="career.php" class="card-link">Explore career track →</a>
+    </div>
+    <div class="service-card" style="transition-delay:0.1s">
+      <div class="card-icon pink">💕</div>
+      <!--HELPING IN RELATIONSHIP SUFFERING-->
+      <h3>Relationship Help</h3>
+      <p>Friendships falling apart? Romantic confusion? Family tension? Share your situation and get compassionate, real-world advice.</p>
+      <a href="relationship.php" class="card-link">Get relationship help →</a>
+    </div>
+    <div class="service-card" style="transition-delay:0.2s">
+      <div class="card-icon purple">🧠</div>
+      <!--PERSONALIZED SECTION WHERE YOU CAN WRITE APART FROM RELATIONSHIP AND CAREER -->
+      <h3>Personalized Advice</h3>
+      <p>Every suggestion is generated based on YOUR responses — not generic tips. Your context shapes the guidance you receive.</p>
+      <a href="<?= $logged_in ? '#' : 'auth.php?mode=register' ?>" class="card-link">Try it now →</a>
+    </div>
+    <div class="service-card" style="transition-delay:0.3s">
+      <div class="card-icon blue">💾</div>
+      <!--SAVE OPTION-->
+      <h3>Save Your Journey</h3>
+      <p>Create a free account and save all your past guidance. Look back, track your growth, and revisit advice whenever you need it.</p>
+      <a href="auth.php?mode=register" class="card-link">Create account →</a>
+    </div>
+  </div>
+</section>
+ 
+<!-- HOW IT WORKS SECTION -->
+<section class="how">
+  <div class="how-inner">
+    <div>
+      <span class="section-label reveal">How it works</span>
+      <h2 class="section-title reveal">Three steps to follow <br><em style="font-style:normal;color:var(--lime)">real clarity.</em></h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">01</div>
+          <div class="step-text">
+            <h4>Choose your track</h4>
+            <p>Pick Career Guidance or Relationship Help — whichever situation you need support from us right now.</p>
+          </div>
+        </div>
+        <div class="step" style="transition-delay:0.15s">
+          <div class="step-num">02</div>
+          <div class="step-text">
+            <h4>Fill the form honestly</h4>
+            <p>Answer a few focused questions about your situation, feelings, strengths and confusion.</p>
+          </div>
+        </div>
+        <div class="step" style="transition-delay:0.3s">
+          <div class="step-num">03</div>
+          <div class="step-text">
+            <h4>Get your personalized advice</h4>
+            <p>Receive tailored guidance based on exactly what you shared. Save it to your account to revisit anytime.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+ 
+    <!-- MOCKUP PREVIEW SECTION -->
+    <div class="how-visual reveal">
+      <div class="mock-bar">
+        <div class="mock-dot"></div>
+        <div class="mock-dot"></div>
+        <div class="mock-dot"></div>
+      </div>
+      <div class="mock-question">💼 What's your dream career field?</div>
+      <div class="mock-input">I love tech and design but don't know which to pick...CONFUSED??</div>
+      <div class="mock-tags">
+        <span class="mock-tag">Creative</span>
+        <span class="mock-tag">Tech-savvy</span>
+        <span class="mock-tag">Indecisive</span>
+      </div>
+      <div class="mock-result">
+        <span>SoulSpace suggests:</span> Based on your love of both tech and creativity, UI/UX Design or Product Design could be your sweet spot —
+         combining both worlds. Consider exploring Figma or Adobe XD to test the waters. 🎯
+      </div>
+    </div>
+  </div>
+</section>
+ 
+<!-- TESTIMONIALS SECTION SHARED BY REAL STUDENTS -->
+<section class="testimonials">
+  <div class="testimonials-head reveal">
+    <span class="section-label">Real stories</span>
+    <h2 class="section-title">What students are-- <em style="font-style:normal;color:var(--lime)">saying.</em></h2>
+    <p class="section-sub">Real voices from real people who found their clarity on SoulSpace.</p>
+  </div>
+  <div class="testi-grid">
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-text">"I had zero idea what to do after 12th. SoulSpace literally mapped out options I hadn't even considered. Now I'm applying for interior design college!"</p>
+      <div class="testi-author">
+        <div class="testi-avatar av-lime">P</div>
+        <div>
+          <div class="testi-name">Priya S.</div>
+          <div class="testi-role">Class 12 student, Delhi</div>
+        </div>
+      </div>
+    </div>
+    <div class="testi-card" style="transition-delay:0.1s">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-text">"My friendships were falling apart and I didn't know how to handle it. The relationship guidance helped me see it from a totally different angle."</p>
+      <div class="testi-author">
+        <div class="testi-avatar av-purple">R</div>
+        <div>
+          <div class="testi-name">Rahul M.</div>
+          <div class="testi-role">College fresher, Mumbai</div>
+        </div>
+      </div>
+    </div>
+    <div class="testi-card" style="transition-delay:0.2s">
+      <div class="testi-stars">★★★★☆</div>
+      <p class="testi-text">"Parents couldn't understand my career confusion. SoulSpace gave me the clarity to actually have that conversation with them. Super helpful!"</p>
+      <div class="testi-author">
+        <div class="testi-avatar av-pink">A</div>
+        <div>
+          <div class="testi-name">Ananya K.</div>
+          <div class="testi-role">B.Com student, Bangalore</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+ 
+<!-- CTA BANNER CODE  -->
+<section class="cta-banner">
+  <div class="cta-inner reveal">
+    <span class="section-label">Ready?</span>
+    <h2 class="section-title">Start your journey <em style="font-style:normal;color:var(--lime)">today.</em></h2>
+    <p>Join thousands of GenZ students who stopped guessing and started growing. It's free. It's personal. It's yours.</p>
+    <a href="<?= $logged_in ? 'career.php' : 'auth.php?mode=register' ?>" class="cta-big">
+      <?= $logged_in ? 'Go to Guidance →' : 'Create Free Account →' ?>
+    </a>
+  </div>
+</section>
+ 
+<!-- FOOTER SECTION OF THE SITE -->
+<footer>
+  <div class="footer-inner">
+    <a href="index.php" class="footer-logo">Soul<span>Space</span></a>
+    <div class="footer-links">
+      <a href="index.php">Home</a>
+      <a href="career.php">Career</a>
+      <a href="relationship.php">Relationships</a>
+      <a href="about.php">About</a>
+      <a href="about.php#contact">Contact</a>
+    </div>
+  </div>
+  <div class="footer-copy">
+    © 2025 SoulSpace by Vinita Prasad. Made with 💚 for GenZ students everywhere.
+    Out here to help you out with all problems!
+  </div>
+</footer>
+ <!--ADDING NOW JAVASCRIPT-->
+<script>
+// Customizing the cursor
+const cursor = document.getElementById('cursor');
+document.addEventListener('mousemove', e => {
+  cursor.style.left = e.clientX + 'px';
+  cursor.style.top  = e.clientY + 'px';
+});
+document.querySelectorAll('a, button, .service-card').forEach(el => {
+  el.addEventListener('mouseenter', () => cursor.classList.add('big'));
+  el.addEventListener('mouseleave', () => cursor.classList.remove('big'));
+});
+ 
+// Intersection reveal when you scroll down
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) e.target.classList.add('visible');
+  });
+}, { threshold: 0.12 });
+ 
+document.querySelectorAll('.reveal, .stat-item, .service-card, .testi-card, .step').forEach(el => {
+  observer.observe(el);
+});
+ 
+// Mobile menu
+function openMobile()  { document.getElementById('mobileMenu').classList.add('open'); }
+function closeMobile() { document.getElementById('mobileMenu').classList.remove('open'); }
+</script>
+
+    </body>
+</html>
+
+*login.php*
+<?php
+session_start();
+$conn = include 'dashboard.php';
+
+if(isset($_POST['login'])){
+
+    $email = $_POST['email'];
+    $pass  = $_POST['password'];
+
+    $res = mysqli_query($conn,"SELECT * FROM users WHERE email='$email'");
+
+    if(mysqli_num_rows($res) > 0){
+        $u = mysqli_fetch_assoc($res);
+
+        if($pass == $u['password']){
+
+            $_SESSION['user_id'] = $u['id'];
+            $_SESSION['name'] = $u['name'];
+
+            // 🔥 DIRECT DASHBOARD
+            header("Location: dashboard.php");
+            exit;
+
+        } else {
+            echo "Wrong password";
+        }
+
+    } else {
+
+        mysqli_query($conn,"INSERT INTO users(name,email,password)
+        VALUES('User','$email','$pass')");
+
+        echo "Your account is created.Now login please.";
+    }
+}
+?>
+
+<h2>Login / Register</h2>
+
+<form method="POST">
+    <input type="email" name="email" placeholder="Email" required><br><br>
+    <input type="password" name="password" placeholder="Password" required><br><br>
+    <button name="login">Continue</button>
+</form>
+
+*logout.php*
+<?php
+// logout.php
+session_start();
+session_destroy();
+header("Location: auth.php?mode=login");
+exit;
+?>
+ *RELATIONSHIP.php*
+<?php
+session_start();
+if (!isset($_SESSION['user_id'])) { header("Location: auth.php?mode=login"); exit; }
+ 
+$conn      = include 'db_career.php';
+$user_id   = (int)$_SESSION['user_id'];
+$full_name = htmlspecialchars($_SESSION['full_name']);
+$advice    = "";
+$submitted = false;
+$errors    = [];
+ 
+function has($text, $word) {
+    return strpos(strtolower($text), $word) !== false;
+}
+ 
+function generateRelAdvice($type, $situation, $feeling, $tried) {
+    $s   = strtolower($situation);
+    $f   = strtolower($feeling);
+    $out = "";
+ 
+    // Type-based opening
+    if ($type === 'friendship') {
+        $out .= "👫 <strong>Friendship Advice:</strong> ";
+        if (has($s,'fight') || has($s,'argument') || has($s,'angry') || has($s,'argument'))
+            $out .= "Fights in friendships are normal — what matters is how you repair them. Give each other a day to cool down, then have a calm conversation without blame. Use 'I feel' statements instead of 'You always'. Strong friendships survive disagreements.<br><br>";
+        elseif (has($s,'ignore') || has($s,'ghosting') || has($s,'stopped talking') || has($s,'distant'))
+            $out .= "Being ignored by a friend hurts deeply. Before assuming the worst, check in with a simple, non-pressuring message. Sometimes people pull away because of their own struggles — it may not be about you at all. Give it time, but don't lose yourself waiting.<br><br>";
+        elseif (has($s,'toxic') || has($s,'jealous') || has($s,'backstab') || has($s,'gossip'))
+            $out .= "A toxic friendship drains you more than it builds you. Real friends celebrate your wins. If someone constantly puts you down or gossips about you, it's okay to slowly create distance. You don't owe anyone access to your life.<br><br>";
+        else
+            $out .= "Friendships go through phases — it's natural. Be honest about how you feel without being aggressive. A true friend will always make time to listen. If they don't, that itself tells you something important.<br><br>";
+ 
+    } elseif ($type === 'romantic') {
+        $out .= "💕 <strong>Romantic Advice:</strong> ";
+        if (has($s,'crush') || has($s,'like someone') || has($s,'feelings') || has($s,'confess'))
+            $out .= "Having feelings for someone is beautiful and nerve-wracking at the same time. You don't need to confess immediately — observe first. Are they kind? Do they respect people? If yes, a simple honest conversation is always better than overthinking. Rejection doesn't define you.<br><br>";
+        elseif (has($s,'breakup') || has($s,'broke up') || has($s,'ex') || has($s,'heartbreak'))
+            $out .= "Breakups hurt, and it's okay to grieve. Allow yourself to feel it — don't suppress it. But also remember: one relationship ending does not mean your story ends. Give yourself time, lean on trusted friends, and focus on rediscovering yourself. You are complete without someone else.<br><br>";
+        elseif (has($s,'fight') || has($s,'argument') || has($s,'misunderstanding') || has($s,'distance'))
+            $out .= "Every relationship has rough patches. The key is not to win the argument — it's to understand each other. Take a breath, listen actively, and speak without attacking. If both people are willing to try, most issues can be resolved with patience and honest communication.<br><br>";
+        elseif (has($s,'cheating') || has($s,'cheat') || has($s,'trust') || has($s,'lied'))
+            $out .= "Trust once broken is very hard to rebuild. Ask yourself honestly — can you forgive AND forget, or just forgive? Both are valid. But staying in a relationship that constantly hurts you is not love — it's habit. Choose yourself first, always.<br><br>";
+        else
+            $out .= "Romantic relationships thrive on communication, trust, and mutual respect. If something feels off, talk about it directly — assumptions create more damage than the actual problem. You deserve a relationship where you feel safe, heard, and valued.<br><br>";
+ 
+    } elseif ($type === 'family') {
+        $out .= "🏠 <strong>Family Advice:</strong> ";
+        if (has($s,'parent') || has($s,'mum') || has($s,'dad') || has($s,'force') || has($s,'pressure'))
+            $out .= "Parent pressure is one of the most common struggles for GenZ. Your parents love you — but sometimes their fears show up as control. Try having a calm, data-backed conversation about your choices. Show them you've thought it through. Most parents respond better to maturity than rebellion.<br><br>";
+        elseif (has($s,'sibling') || has($s,'brother') || has($s,'sister') || has($s,'comparison'))
+            $out .= "Sibling comparison is painful. Remember — you are not in competition with your sibling. Both of you are on different journeys. Talk to your parents calmly about how comparisons affect you. And to your sibling — they might also be dealing with pressure you don't see.<br><br>";
+        elseif (has($s,'fight') || has($s,'argument') || has($s,'tense') || has($s,'home environment'))
+            $out .= "A tense home environment is mentally exhausting. Try to identify a calm adult in the family you can confide in. If things are affecting your mental health seriously, speaking to a school counselor is always a brave and smart move.<br><br>";
+        else
+            $out .= "Family relationships are complex because they carry years of history. Pick the right time and right energy to have difficult conversations. Avoid reactive moments — plan when to speak and what to say. Progress in family dynamics is slow but always worth the effort.<br><br>";
+ 
+    } elseif ($type === 'self') {
+        $out .= "🧠 <strong>Self & Mental Health Advice:</strong> ";
+        if (has($s,'lonely') || has($s,'alone') || has($s,'no friends') || has($s,'isolated'))
+            $out .= "Feeling lonely doesn't mean you are unwanted — it means you haven't yet found your people. Join one new group, class, or online community related to something you love. Connections happen naturally when you're doing things that genuinely interest you.<br><br>";
+        elseif (has($s,'anxious') || has($s,'anxiety') || has($s,'panic') || has($s,'overthinking'))
+            $out .= "Anxiety is your brain trying to protect you from a threat that isn't always real. When you feel overwhelmed, try the 5-4-3-2-1 technique: name 5 things you see, 4 you hear, 3 you can touch, 2 you smell, 1 you taste. It brings you back to the present moment.<br><br>";
+        elseif (has($s,'confidence') || has($s,'self-worth') || has($s,'not good enough') || has($s,'insecure'))
+            $out .= "Low self-confidence is not a permanent trait — it's a habit that can be changed. Start small: write 3 things you did well each night. Confidence isn't about thinking you're perfect — it's about trusting yourself despite imperfections.<br><br>";
+        elseif (has($s,'sad') || has($s,'depressed') || has($s,'cry') || has($s,'hopeless') || has($s,'empty'))
+            $out .= "What you're feeling is real and valid. Please don't carry it alone. Talk to one trusted person — a friend, a teacher, or a family member. If it feels too heavy, reaching out to a counselor is a sign of strength, not weakness. You matter. 💚<br><br>";
+        else
+            $out .= "Taking time to understand yourself is one of the most powerful things you can do. Journaling, therapy, or simply talking to someone you trust can create enormous clarity. You are not your worst thoughts.<br><br>";
+    } else {
+        $out .= "🌟 <strong>General Advice:</strong> Every situation has a way through — even when it doesn't feel like it. The fact that you're seeking guidance shows real self-awareness. Be honest about what you need, ask for help without hesitation, and remember: most things that feel permanent are actually temporary.<br><br>";
+    }
+ 
+    // Feeling-based empathy
+    $out .= "💙 <strong>About Your Feelings</strong> (<em>$feeling</em>): ";
+    if (has($f,'hurt') || has($f,'pain') || has($f,'sad'))
+        $out .= "Feeling hurt is a sign that you genuinely cared. Allow yourself to feel it — don't rush the healing process. Be gentle with yourself.";
+    elseif (has($f,'angry') || has($f,'frustrated') || has($f,'mad'))
+        $out .= "Anger is a valid emotion. But when it's hot, decisions made are usually ones we regret. Write it down first, then respond — never react in the heat of the moment.";
+    elseif (has($f,'confused') || has($f,'lost') || has($f,'don\'t know'))
+        $out .= "Confusion means you're at a crossroads — and that's actually a good place to be. It means you're thinking deeply. Give yourself permission to not have all the answers right now.";
+    elseif (has($f,'anxious') || has($f,'scared') || has($f,'nervous'))
+        $out .= "Fear of what might happen often hurts more than what actually happens. Focus on what you can control right now — not all the 'what ifs'.";
+    elseif (has($f,'lonely') || has($f,'alone') || has($f,'empty'))
+        $out .= "Loneliness is one of the hardest feelings. But it is temporary. Reach out to even one person today — a message, a call. Connection starts with a single step.";
+    else
+        $out .= "Whatever you're feeling right now — it's valid. You don't need to justify your emotions to anyone. Just make sure you're not carrying them alone.";
+ 
+    // What you tried
+    if (!empty(trim($tried))) {
+        $out .= "<br><br>✅ <strong>What You've Already Tried:</strong> You mentioned — \"<em>$tried</em>\". That shows maturity and effort. Don't give up — sometimes the same action needs to be repeated calmly, or approached from a different angle. Progress in relationships is rarely linear.";
+    }
+ 
+    $out .= "<br><br>✨ <strong>SoulSpace Final Word:</strong> You are not alone in this. Every person you admire has gone through something similar. The fact that you're seeking help instead of giving up — that's already your strength. Keep going. 💚";
+    return $out;
+}
+ 
+// Form submit
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['situation'])) {
+    $type  = mysqli_real_escape_string($conn, $_POST['relationship_type']);
+    $sit   = trim(mysqli_real_escape_string($conn, $_POST['situation']));
+    $feel  = trim(mysqli_real_escape_string($conn, $_POST['feeling'] ?? ''));
+    $tried = trim(mysqli_real_escape_string($conn, $_POST['what_tried'] ?? ''));
+ 
+    if (!$sit) $errors[] = "Please describe your situation!";
+ 
+    if (empty($errors)) {
+        $advice = generateRelAdvice($type, $sit, $feel, $tried);
+        $adv_db = mysqli_real_escape_string($conn, $advice);
+        $sql    = "INSERT INTO relationship_help (user_id,relationship_type,situation,feeling,what_tried,advice_given)
+                   VALUES('$user_id','$type','$sit','$feel','$tried','$adv_db')";
+        if (mysqli_query($conn, $sql)) $submitted = true;
+        else $errors[] = "DB Error: " . mysqli_error($conn);
+    }
+}
+ 
+$past = mysqli_query($conn, "SELECT * FROM relationship_help WHERE user_id='$user_id' ORDER BY created_at DESC LIMIT 5");
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SoulSpace — Relationship Help</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#080810;--surface:#10101a;--card:#14141f;--border:#222233;--lime:#c8f55a;--purple:#7c6af7;--pink:#f55a8f;--text:#f0f0f8;--muted:#7777a0}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:16px 50px;background:rgba(8,8,16,.9);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
+.logo{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;text-decoration:none;color:var(--text)}
+.logo span{color:var(--lime)}
+nav ul{display:flex;gap:24px;list-style:none}
+nav a{color:var(--muted);text-decoration:none;font-size:.87rem;transition:color .2s}
+nav a:hover,nav a.active{color:var(--lime)}
+.nav-r{display:flex;align-items:center;gap:12px}
+.nav-r span{color:var(--lime);font-size:.85rem;font-weight:500}
+.btn-xs{padding:6px 16px;border-radius:50px;border:1.5px solid var(--border);color:var(--muted);text-decoration:none;font-size:.8rem;transition:all .2s}
+.btn-xs:hover{border-color:var(--lime);color:var(--lime)}
+.wrap{max-width:1060px;margin:0 auto;padding:110px 50px 70px;display:grid;grid-template-columns:1fr 320px;gap:24px;align-items:start}
+h1{font-family:'Syne',sans-serif;font-size:2.2rem;font-weight:800;letter-spacing:-1.5px;margin-bottom:8px}
+h1 em{font-style:normal;color:var(--pink)}
+.sub-head{color:var(--muted);font-size:.9rem;margin-bottom:24px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:28px}
+.sec-label{font-family:'Syne',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--pink);margin:20px 0 10px;padding-bottom:7px;border-bottom:1px solid var(--border)}
+.sec-label:first-child{margin-top:0}
+.fg{margin-bottom:14px}
+label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:5px}
+.req{color:var(--pink)}
+input,textarea,select{width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.9rem;outline:none;transition:border-color .2s;resize:none}
+input:focus,textarea:focus,select:focus{border-color:var(--pink)}
+textarea{min-height:90px}
+select option{background:var(--surface)}
+.hint{font-size:.72rem;color:var(--muted);margin-top:3px}
+.err{background:rgba(245,90,143,.08);border:1px solid rgba(245,90,143,.25);color:var(--pink);border-radius:10px;padding:10px 14px;font-size:.85rem;margin-bottom:14px}
+.btn-submit{width:100%;padding:14px;background:var(--pink);color:#fff;border:none;border-radius:12px;font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;margin-top:6px;transition:all .2s}
+.btn-submit:hover{background:#f77aaa}
+.btn-again{background:transparent;border:1.5px solid var(--border);color:var(--muted);padding:8px 20px;border-radius:50px;cursor:pointer;font-size:.83rem;margin-bottom:20px;transition:all .2s;font-family:'DM Sans',sans-serif}
+.btn-again:hover{border-color:var(--pink);color:var(--pink)}
+.result-card{background:linear-gradient(135deg,rgba(245,90,143,.05),rgba(124,106,247,.05));border:1px solid rgba(245,90,143,.2);border-radius:20px;padding:28px;margin-bottom:22px}
+.result-top{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.r-icon{width:40px;height:40px;background:rgba(245,90,143,.1);border:1px solid rgba(245,90,143,.2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+.result-top h3{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700}
+.result-top p{color:var(--muted);font-size:.77rem;margin-top:2px}
+.result-body{font-size:.89rem;line-height:1.85}
+.result-body strong{color:var(--pink)}
+.result-body em{color:#c0c0e0;font-style:italic}
+.saved-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(245,90,143,.07);border:1px solid rgba(245,90,143,.18);color:var(--pink);font-size:.74rem;padding:4px 12px;border-radius:50px;margin-top:14px}
+/* Type selector pills */
+.type-pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.type-pill{padding:7px 16px;border-radius:50px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-size:.8rem;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif}
+.type-pill:hover{border-color:var(--pink);color:var(--pink)}
+.type-pill.selected{background:rgba(245,90,143,.1);border-color:var(--pink);color:var(--pink)}
+.sidebar{display:flex;flex-direction:column;gap:16px}
+.s-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px}
+.s-card h3{font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;margin-bottom:12px}
+.tips{list-style:none;display:flex;flex-direction:column;gap:8px}
+.tips li{display:flex;gap:8px;font-size:.8rem;color:var(--muted);line-height:1.5}
+.tips a{color:var(--lime);text-decoration:none}
+.past-item{padding:10px 0;border-bottom:1px solid var(--border)}
+.past-item:last-child{border:none;padding-bottom:0}
+.p-date{font-size:.71rem;color:var(--muted)}
+.p-type{font-size:.8rem;font-weight:600;margin:3px 0;color:var(--pink)}
+.p-snip{font-size:.77rem;color:var(--muted);line-height:1.4}
+@media(max-width:800px){nav{padding:14px 18px}nav ul{display:none}.wrap{grid-template-columns:1fr;padding:100px 18px 50px}}
+</style>
+</head>
+<body>
+<nav>
+    <a href="index.php" class="logo">Soul<span>Space</span></a>
+    <ul>
+        <li><a href="index.php">Home</a></li>
+        <li><a href="goto_career.php">Career</a></li>
+        <li><a href="relationship.php" class="active">Relationships</a></li>
+        <li><a href="about.php">About</a></li>
+    </ul>
+    <div class="nav-r">
+        <span>Hey, <?= $full_name ?> 👋</span>
+        <a href="logout.php" class="btn-xs">Logout</a>
+    </div>
+</nav>
+ 
+<div class="wrap">
+    <div>
+        <h1>Relationship <em>Help</em> 💕</h1>
+        <p class="sub-head">Share your situation honestly — you'll get personalized, judgment-free advice saved to your account.</p>
+ 
+        <?php if ($submitted && $advice): ?>
+        <div class="result-card">
+            <div class="result-top">
+                <div class="r-icon">💕</div>
+                <div>
+                    <h3>Your Personalized Advice</h3>
+                    <p>Based on your situation • Auto-saved ✅</p>
+                </div>
+            </div>
+            <div class="result-body"><?= $advice ?></div>
+            <div class="saved-badge">💾 Saved to your account</div>
+        </div>
+        <form method="POST" action="relationship.php">
+            <button type="submit" class="btn-again">↩ Get more advice</button>
+        </form>
+ 
+        <?php else: ?>
+        <div class="card">
+            <div class="sec-label">Your Situation</div>
+            <?php foreach($errors as $e): ?><div class="err">⚠️ <?= htmlspecialchars($e) ?></div><?php endforeach; ?>
+            <form method="POST" action="relationship.php">
+ 
+                <div class="fg">
+                    <label>What type of relationship is this about? <span class="req">*</span></label>
+                    <select name="relationship_type" required>
+                        <option value="friendship" <?= (isset($_POST['relationship_type'])&&$_POST['relationship_type']==='friendship')?'selected':'' ?>>👫 Friendship</option>
+                        <option value="romantic"   <?= (isset($_POST['relationship_type'])&&$_POST['relationship_type']==='romantic')?'selected':'' ?>>💕 Romantic</option>
+                        <option value="family"     <?= (isset($_POST['relationship_type'])&&$_POST['relationship_type']==='family')?'selected':'' ?>>🏠 Family</option>
+                        <option value="self"       <?= (isset($_POST['relationship_type'])&&$_POST['relationship_type']==='self')?'selected':'' ?>>🧠 Self / Mental Health</option>
+                        <option value="other"      <?= (isset($_POST['relationship_type'])&&$_POST['relationship_type']==='other')?'selected':'' ?>>🌟 Other</option>
+                    </select>
+                </div>
+ 
+                <div class="fg">
+                    <label>Describe your situation in detail <span class="req">*</span></label>
+                    <textarea name="situation" placeholder="e.g. My best friend has been ignoring me for 2 weeks. We had a small argument and now she won't reply to any of my messages..."><?= isset($_POST['situation'])?htmlspecialchars($_POST['situation']):'' ?></textarea>
+                    <p class="hint">The more detail you share — the more accurate your advice will be ✨</p>
+                </div>
+ 
+                <div class="sec-label">Your Feelings</div>
+                <div class="fg">
+                    <label>How are you feeling right now?</label>
+                    <textarea name="feeling" placeholder="e.g. I feel hurt, confused and a little angry. I don't understand why they're doing this..."><?= isset($_POST['feeling'])?htmlspecialchars($_POST['feeling']):'' ?></textarea>
+                </div>
+ 
+                <div class="sec-label">What You've Already Tried</div>
+                <div class="fg">
+                    <label>What have you already done to fix this?</label>
+                    <textarea name="what_tried" placeholder="e.g. I texted twice but got no reply. I asked a mutual friend to check in. I tried apologizing..."><?= isset($_POST['what_tried'])?htmlspecialchars($_POST['what_tried']??''):'' ?></textarea>
+                    <p class="hint">💬 This helps us give you advice beyond what you've already tried</p>
+                </div>
+ 
+                <button type="submit" class="btn-submit">💕 Get My Advice →</button>
+            </form>
+        </div>
+        <?php endif; ?>
+    </div>
+ 
+    <div class="sidebar">
+        <div class="s-card">
+            <h3>💡 Tips for best results</h3>
+            <ul class="tips">
+                <li><span>✍️</span> Be honest — no judgment here</li>
+                <li><span>📝</span> More detail = more accurate advice</li>
+                <li><span>💾</span> Advice is auto-saved to your account</li>
+                <li><span>🔄</span> You can fill it multiple times</li>
+                <li><span>🏠</span> <a href="index.php">Back to Home</a></li>
+            </ul>
+        </div>
+        <div class="s-card">
+            <h3>📂 Your Past Advice</h3>
+            <?php if ($past && mysqli_num_rows($past) > 0): ?>
+
+                <?php while ($r = mysqli_fetch_assoc($past)): ?>
+                <div class="past-item">
+                    <div class="p-date"><?= date('d M Y, h:i A', strtotime($r['created_at'])) ?></div>
+                    <div class="p-type">💕 <?= ucfirst($r['relationship_type']) ?></div>
+                    <div class="p-snip"><?= htmlspecialchars(substr(strip_tags($r['advice_given']), 0, 90)) ?>...</div>
+                </div>
+                <?php endwhile; ?>
+            <?php else: ?>
+                <p style="color:var(--muted);font-size:.82rem;line-height:1.6">No past advice yet. Fill the form to get started! 🌱</p>
+            <?php endif; ?>
+        </div>
+        <div class="s-card">
+            <h3>🆘 Need immediate help?</h3>
+            <p style="color:var(--muted);font-size:.82rem;line-height:1.7">If you're going through something serious, please reach out to a trusted adult, school counselor, or a helpline. You are never alone. 💚</p>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+                                               ---*DATABSE FOR THIS*---
+<?php
+$conn = mysqli_connect('localhost', 'root', '', '');
+if (!$conn) die("Connection failed: " . mysqli_connect_error());
+ 
+mysqli_query($conn, "CREATE DATABASE IF NOT EXISTS soulspace");
+mysqli_select_db($conn, 'soulspace');
+mysqli_set_charset($conn, 'utf8');
+ 
+mysqli_query($conn, "CREATE TABLE  users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    full_name VARCHAR(100) NOT NULL,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    age INT,
+    gender ENUM('male','female','non-binary','prefer_not_to_say') DEFAULT 'prefer_not_to_say',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)");
+ 
+mysqli_query($conn, "CREATE TABLE career_guidance (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    current_class VARCHAR(20),
+    interests TEXT,
+    strengths TEXT,
+    weaknesses TEXT,
+    dream_career VARCHAR(200),
+    confusion TEXT,
+    advice_given TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+)");
+ 
+mysqli_query($conn, "CREATE TABLE contact_messages (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL,
+    message TEXT NOT NULL,
+    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)");
+ 
+// Sample data ek baar
+$row = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as cnt FROM users"));
+if ($row['cnt'] == 0) {
+    $hash = password_hash('test123', PASSWORD_DEFAULT);
+    mysqli_query($conn, "INSERT INTO users (full_name,username,email,password,age)
+        VALUES ('Test Student','teststudent','test@soulspace.com','$hash',17)");
+    $uid = mysqli_insert_id($conn);
+    mysqli_query($conn, "INSERT INTO career_guidance
+        (user_id,current_class,interests,strengths,weaknesses,dream_career,confusion,advice_given)
+        VALUES ($uid,'12','coding aur web design','math aur logic','procrastination',
+        'Software Engineer','science loon ya CS','Tech Path suggested!')");
+}
+ 
+return $conn;
+?>
+ 
+*db_career.php*
+<?php
+// db_career.php — Database + Table create karta hai automatically
+ 
+$conn = mysqli_connect('localhost', 'root', '', '');
+if (!$conn) die("Connection failed: " . mysqli_connect_error());
+ 
+// Database banana
+mysqli_query($conn, "CREATE DATABASE IF NOT EXISTS soulspace");
+mysqli_select_db($conn, 'soulspace');
+mysqli_set_charset($conn, 'utf8');
+ 
+// Users table
+mysqli_query($conn, "CREATE TABLE IF NOT EXISTS users (
+    id         INT AUTO_INCREMENT PRIMARY KEY,
+    full_name  VARCHAR(100) NOT NULL,
+    username   VARCHAR(50)  NOT NULL UNIQUE,
+    email      VARCHAR(150) NOT NULL UNIQUE,
+    password   VARCHAR(255) NOT NULL,
+    age        INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)");
+ 
+// Career guidance table
+mysqli_query($conn, "CREATE TABLE IF NOT EXISTS career_guidance (
+    id            INT AUTO_INCREMENT PRIMARY KEY,
+    user_id       INT NOT NULL,
+    current_class VARCHAR(20),
+    interests     TEXT,
+    strengths     TEXT,
+    weaknesses    TEXT,
+    dream_career  VARCHAR(200),
+    confusion     TEXT,
+    advice_given  TEXT,
+    created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+)");
+ 
+// Sample data — sirf ek baar insert hoga
+$check = mysqli_query($conn, "SELECT COUNT(*) as cnt FROM career_guidance");
+$row   = mysqli_fetch_assoc($check);
+if ($row['cnt'] == 0) {
+    // Pehle ek sample user insert karo
+    $hash = password_hash('test123', PASSWORD_DEFAULT);
+    mysqli_query($conn, "INSERT IGNORE INTO users (full_name, username, email, password, age)
+        VALUES ('Test Student', 'teststudent', 'test@soulspace.com', '$hash', 17)");
+ 
+    $uid = mysqli_insert_id($conn);
+    if ($uid > 0) {
+        mysqli_query($conn, "INSERT INTO career_guidance
+            (user_id, current_class, interests, strengths, weaknesses, dream_career, confusion, advice_given)
+            VALUES
+            ($uid, '12', 'coding aur web design', 'math aur logic', 'procrastination',
+            'Software Engineer', 'science loon ya computer science',
+            'Tech Path suggested — freeCodeCamp se shuru karo!')");
+ 
+        mysqli_query($conn, "INSERT INTO career_guidance
+            (user_id, current_class, interests, strengths, weaknesses, dream_career, confusion, advice_given)
+            VALUES
+            ($uid, '11', 'biology aur health', 'hardwork aur dedication', 'nervousness during exams',
+            'Doctor', 'NEET bahut tough lagta hai',
+            'Medical Path suggested — NCERT roz padho, consistency hi key hai!')");
+    }
+}
+ 
+return $conn;
+?>
+ 
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
